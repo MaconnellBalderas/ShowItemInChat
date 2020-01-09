@@ -1,0 +1,11 @@
+main: games.crusader.itemchat.ItemChatPlugin
+#main class package.classname
+version: 1.0
+author: BigMacMC
+name: ItemChatPlugin
+#one word for name
+description: Displays item in hand when using [item]
+
+#commands:
+# heal:
+#  description:
