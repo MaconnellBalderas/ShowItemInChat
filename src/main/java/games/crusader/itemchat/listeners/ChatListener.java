@@ -22,15 +22,24 @@ public class ChatListener implements Listener {
         Player player = event.getPlayer();
         String message = event.getMessage().toLowerCase();
 
+
         if(message.contains("[item]")){
             event.setCancelled(true);
             Collection<? extends Player> onlinePlayers = Bukkit.getOnlinePlayers();
 
-            
-
             String itemInHand = player.getInventory().getItemInMainHand().getType().name().replace("_", " ").toLowerCase();
 
-            TextComponent tc = new TextComponent("" + message.replace("[item]", itemInHand + ""));
+
+//            Option 1 splits tcItem and tcMessage to seperate parts but can not replace [item] with tcItem; string != TextComponent
+            String item = message.replace( message, itemInHand);
+
+            TextComponent tcItem = new TextComponent( ChatColor.AQUA + item );
+
+            TextComponent tcMessage = new TextComponent("<" + player.getDisplayName() + "> " + message.replace("[item]", tcItem ));
+
+//            Option 2 hover event on entire sentence but color coded the item to show the player what it is; entire sentence == hover event
+//            TextComponent tcItem = new TextComponent("<" + player.getDisplayName() + "> " +  message.replace("[item]", ChatColor.AQUA + itemInHand) );
+
 
             List<String> formattedEnchantments = new ArrayList<String>();
             Map<Enchantment, Integer> enchantments = player.getInventory().getItemInMainHand().getEnchantments();
@@ -57,11 +66,20 @@ public class ChatListener implements Listener {
                 totalDurability = durability + "/" + maxDurability;
             }
 
-            tc.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder( ChatColor.AQUA + itemInHand + "\n" + ChatColor.RESET + ench + "\n"  + amount + " " + itemInHand + "\n"  + totalDurability).create()));
-            player.spigot().sendMessage( tc );
+            tcItem.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder( ChatColor.AQUA + itemInHand + "\n" + ChatColor.RESET + ench + "\n"  + amount + " " + itemInHand + "\n"  + totalDurability).create()));
 
+//            tcMessage.addExtra(tcItem);
+
+            //Option 1
+            for(Player totalPlayers : onlinePlayers){
+                totalPlayers.spigot().sendMessage( tcMessage );
+            }
+
+            //Option 2
+//            for(Player totalPlayers : onlinePlayers){
+//                totalPlayers.spigot().sendMessage( tcItem );
+//            }
         }
-
 
     }
 
