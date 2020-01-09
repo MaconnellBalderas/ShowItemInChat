@@ -12,6 +12,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.inventory.ItemStack;
 
 import java.util.*;
 
@@ -30,15 +31,16 @@ public class ChatListener implements Listener {
             String itemInHand = player.getInventory().getItemInMainHand().getType().name().replace("_", " ").toLowerCase();
 
 
-//            Option 1 splits tcItem and tcMessage to seperate parts but can not replace [item] with tcItem; string != TextComponent
+//            Option 1 splits tcItem and tcMessage to separate parts but can not replace [item] with tcItem; string != TextComponent
             String item = message.replace( message, itemInHand);
 
             TextComponent tcItem = new TextComponent( ChatColor.AQUA + item );
 
-            TextComponent tcMessage = new TextComponent("<" + player.getDisplayName() + "> " + message.replace("[item]", tcItem ));
+            TextComponent tcMessage = new TextComponent("<" + player.getDisplayName() + "> " + message.replace("[item]", "" ));
 
 //            Option 2 hover event on entire sentence but color coded the item to show the player what it is; entire sentence == hover event
 //            TextComponent tcItem = new TextComponent("<" + player.getDisplayName() + "> " +  message.replace("[item]", ChatColor.AQUA + itemInHand) );
+
 
 
             List<String> formattedEnchantments = new ArrayList<String>();
@@ -68,12 +70,12 @@ public class ChatListener implements Listener {
 
             tcItem.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder( ChatColor.AQUA + itemInHand + "\n" + ChatColor.RESET + ench + "\n"  + amount + " " + itemInHand + "\n"  + totalDurability).create()));
 
-//            tcMessage.addExtra(tcItem);
+            tcMessage.addExtra(tcItem);
 
             //Option 1
-            for(Player totalPlayers : onlinePlayers){
-                totalPlayers.spigot().sendMessage( tcMessage );
-            }
+//            for(Player totalPlayers : onlinePlayers){
+//                totalPlayers.spigot().sendMessage( tcMessage );
+//            }
 
             //Option 2
 //            for(Player totalPlayers : onlinePlayers){
