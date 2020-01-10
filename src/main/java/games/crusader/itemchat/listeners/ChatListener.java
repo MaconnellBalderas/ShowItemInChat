@@ -1,7 +1,8 @@
 package games.crusader.itemchat.listeners;
 
 import games.crusader.itemchat.utils.EnchantmentUtil;
-import  net.md_5.bungee.api.chat.ComponentBuilder;
+import games.crusader.itemchat.utils.StringUtil;
+import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
@@ -13,76 +14,104 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.*;
 
 public class ChatListener implements Listener {
+    public static final String keyword = "[item]";
 
-     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void ShowItem(AsyncPlayerChatEvent event) {
         Player player = event.getPlayer();
         String message = event.getMessage().toLowerCase();
 
+        String formattedMessage = event.getFormat();
+        formattedMessage = formattedMessage.replace("%1$s", player.getDisplayName());
+        formattedMessage = formattedMessage.replace("%2$s", event.getMessage());
 
-        if(message.contains("[item]")){
+
+        if (message.contains(keyword)) {
             event.setCancelled(true);
-            Collection<? extends Player> onlinePlayers = Bukkit.getOnlinePlayers();
+            String itemName = ChatColor.AQUA + player.getInventory().getItemInMainHand().getType().name().replace("_", " ").toLowerCase();
+            List<String> parts = StringUtil.split(keyword, formattedMessage);
 
-            String itemInHand = player.getInventory().getItemInMainHand().getType().name().replace("_", " ").toLowerCase();
+            HoverEvent hoverEvent = getHoverEvent(player.getInventory().getItemInMainHand());
 
+            TextComponent tcMessage;
+            String lastString = parts.get(parts.size() - 1);
+            if (lastString.equals(keyword)) {
+                tcMessage = new TextComponent(itemName);
+                tcMessage.setHoverEvent(hoverEvent);
+            } else {
+                tcMessage = new TextComponent(lastString);
+            }
 
-//            Option 1 splits tcItem and tcMessage to separate parts but can not replace [item] with tcItem; string != TextComponent
-            String item = message.replace( message, itemInHand);
+            for (int i = parts.size() - 2; i >= 0; i--) {
+                TextComponent temp;
+                String text = parts.get(i);
+                if (text.equals(keyword)){
+                    temp = new TextComponent(itemName);
+                    temp.setHoverEvent(hoverEvent);
+                }
+                else {
+                    temp = new TextComponent(text);
+                    temp.setHoverEvent(null);
+                }
+                temp.addExtra(tcMessage);
+                tcMessage = temp;
 
-            TextComponent tcItem = new TextComponent( ChatColor.AQUA + item );
+            }
 
-            TextComponent tcMessage = new TextComponent("<" + player.getDisplayName() + "> " + message.replace("[item]", "" ));
+//            Option 1
+            for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
+                onlinePlayer.spigot().sendMessage(tcMessage);
+            }
 
-//            Option 2 hover event on entire sentence but color coded the item to show the player what it is; entire sentence == hover event
-//            TextComponent tcItem = new TextComponent("<" + player.getDisplayName() + "> " +  message.replace("[item]", ChatColor.AQUA + itemInHand) );
+        }
 
+    }
 
+    private HoverEvent getHoverEvent(ItemStack itemStack) {
+        String itemName = "Air";
+        int amount = 0;
+        String totalDurability = "No Durability";
+        String ench = "";
 
-            List<String> formattedEnchantments = new ArrayList<String>();
-            Map<Enchantment, Integer> enchantments = player.getInventory().getItemInMainHand().getEnchantments();
+        if (itemStack != null) {
+            ItemMeta meta = itemStack.getItemMeta();
+            if (meta != null && meta.getDisplayName() != null) {
+                itemName = meta.getDisplayName();
+            } else {
+                itemName = itemStack.getType().name().replace("_", " ").toLowerCase();
+            }
 
-            for(Enchantment enchant : enchantments.keySet()){
+            List<String> formattedEnchantments = new ArrayList<>();
+            Map<Enchantment, Integer> enchantments = itemStack.getEnchantments();
+
+            for (Enchantment enchant : enchantments.keySet()) {
                 String enchantName = EnchantmentUtil.getPrettyName(enchant);
                 int enchantNumber = enchantments.get(enchant);
                 formattedEnchantments.add(enchantName + " " + enchantNumber);
             }
 
-            String ench =  String.join("\n", formattedEnchantments);
+            ench = String.join("\n", formattedEnchantments);
 
-            int amount = player.getInventory().getItemInMainHand().getAmount();
+            amount = itemStack.getAmount();
 
-            int maxDurability = player.getInventory().getItemInMainHand().getType().getMaxDurability();
+            int maxDurability = itemStack.getType().getMaxDurability();
 
-            int durability = player.getInventory().getItemInMainHand().getType().getMaxDurability() - player.getInventory().getItemInMainHand().getDurability();
+            int durability = itemStack.getType().getMaxDurability() - itemStack.getDurability();
 
-            String totalDurability;
-
-            if(maxDurability == 0){
+            if (maxDurability == 0) {
                 totalDurability = "No Durability";
             } else {
                 totalDurability = durability + "/" + maxDurability;
             }
-
-            tcItem.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder( ChatColor.AQUA + itemInHand + "\n" + ChatColor.RESET + ench + "\n"  + amount + " " + itemInHand + "\n"  + totalDurability).create()));
-
-            tcMessage.addExtra(tcItem);
-
-            //Option 1
-//            for(Player totalPlayers : onlinePlayers){
-//                totalPlayers.spigot().sendMessage( tcMessage );
-//            }
-
-            //Option 2
-//            for(Player totalPlayers : onlinePlayers){
-//                totalPlayers.spigot().sendMessage( tcItem );
-//            }
         }
 
+        return new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder(ChatColor.AQUA + itemName + "\n" + ChatColor.RESET + ench + "\n" + amount + " " + itemName + "\n" + totalDurability).create());
     }
 
 
